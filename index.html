@@ -316,7 +316,7 @@
 <div id="noise-overlay"></div>
 
 <div id="bg-wrapper">
-    <!-- 대문 첫 실행 시 새로 교체해주신 COVER.png가 전체화면에서 고해상도로 장악하게 구성 -->
+    <!-- 대문 첫 실행 시 COVER.png가 전체화면에서 고해상도로 렌더링되게 구성 -->
     <img id="bg-image" src="" alt="Lunar Harvest Theme Background">
 </div>
 
@@ -381,12 +381,11 @@
     // ==========================================
     // 📂 미디어 리소스 일괄 폴더 정비용 설정 영역
     // ==========================================
-    // 폴더명을 각각 'images', 'videos'로 설정하신 환경에 맞춤 지원됩니다.
-    // 수치에 슬래시(/) 처리가 누락되었어도 시스템이 자동으로 교정합니다.
+    // 폴더명을 각각 'images', 'videos', 'music'으로 설정하신 환경에 완벽히 대응합니다.
     const ASSET_PATHS = {
-        images: 'images', // 이미지 폴더 경로 (images)
-        videos: 'videos', // 비디오 폴더 경로 (videos)
-        sound: ''         // 사운드 폴더 경로 (없다면 빈칸 유지)
+        images: 'images', // 이미지 폴더 경로
+        videos: 'videos', // 비디오 폴더 경로
+        sound: 'music'    // 사운드/음악 폴더 경로 (music)
     };
 
     // 경로 보정 포맷 가공 함수 (끝단에 슬래시 자동 매핑)
@@ -503,6 +502,7 @@
 
     function playBackgroundMusic() {
         if (!bgmAudio) {
+            // 사운드/음악 전용 폴더 설정 경로를 사용하여 오디오 파일 추적
             bgmAudio = new Audio(soundDir + 'Humming Monolith.mp3');
             bgmAudio.loop = true; 
             bgmAudio.volume = 0.4; 
@@ -549,7 +549,7 @@
                 artImg.style.display = 'none';
                 artVideo.style.display = 'block';
 
-                // 비디오 소스 갱신 및 재생 보증 (비디오 폴더 경로 자동 처리)
+                // 비디오 소스 갱신 및 재생 보증 (비디오 폴더 경로 설정 적용)
                 artVideo.src = videoDir + key + '.mp4';
                 artVideo.load();
                 
@@ -558,7 +558,7 @@
                     artVideo.play().catch(err => console.log("Video Autoplay Blocked", err));
                 };
 
-                // 비디오 미보유 또는 로딩 에러 시 대응 이미지로 자동 복귀
+                // 비디오 재생 실패 시 대응 정적 이미지 카드로 폴백 자동 조치
                 artVideo.onerror = () => {
                     console.log("Video fallback to Image: " + key + ".png");
                     artVideo.style.display = 'none';
@@ -590,7 +590,7 @@
     }
 
     function updateUI(key) {
-        // [중요 디버깅] BRANCH_S 분기 조건문 내부 변수 누락(S)을 state.S로 정상 교정
+        // BRANCH_S 분기 조건문 내부 변수 누락 방지 (state.S 기반 판정)
         if (key === "BRANCH_S") {
             key = (state.S >= 50) ? "SC-05" : "LP-01";
         }
@@ -786,7 +786,7 @@
     }
 
     window.onload = () => {
-        // 첫 화면 COVER.png에 이미지 경로 적용
+        // 첫 화면 COVER.png에 최적 경로 연동
         const bgImg = document.getElementById('bg-image');
         if (bgImg) {
             bgImg.src = imgDir + 'COVER.png';
