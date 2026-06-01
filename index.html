@@ -381,11 +381,10 @@
     // ==========================================
     // 📂 미디어 리소스 일괄 폴더 정비용 설정 영역
     // ==========================================
-    // 폴더명을 각각 'images', 'videos', 'music'으로 설정하신 환경에 완벽히 대응합니다.
     const ASSET_PATHS = {
         images: 'images', // 이미지 폴더 경로
         videos: 'videos', // 비디오 폴더 경로
-        sound: 'music'    // 사운드/음악 폴더 경로 (music)
+        sound: 'music'    // 사운드/음악 폴더 경로
     };
 
     // 경로 보정 포맷 가공 함수 (끝단에 슬래시 자동 매핑)
@@ -423,19 +422,21 @@
         ]},
         'SC-02': { tag: 'SC-02 유골의 탑', artKey: 'S2', isVideo: true, paragraphs: [
             { type: 'action', text: "수직으로 끝없이 솟아오른 기괴한 유골 탑의 나선형 계단. 하늘과 땅의 경계가 모호한 이 고지대에서 소년의 시야가 기하급수적으로 흔들리기 시작한다." },
-            { type: 'quote', text: "나레이션: \"높이 오를수록 감시자의 시선은 칼날이 된다.\"" }
+            { type: 'action', text: "나레이션: 높이 오를수록 감시자의 시선은 칼날이 된다." }
         ], choices: [
             { text: "1. [인내] 정공법 등반 (Stability-5, Abyss-5)", s: -5, d: 0, a: -5, next: 'SC-03' },
             { text: "2. [변칙] 생체 전선 이용 (Abyss+10, Discovery+15)", s: 0, d: 15, a: 10, next: 'SC-03' }
         ]},
         'SC-03': { tag: 'SC-03 시냅스 접속', artKey: 'S3', isVideo: true, paragraphs: [
-            { type: 'action', text: "달의 은색 신경망이 상처에 침투합니다. 당신의 의식이 흐릿해집니다.\n\n심연의 투영: \"이것은 고통이 아니야. 네가 가져야 할 '신의 감각'일 뿐이지.\"" }
+            { type: 'action', text: "달의 은색 신경망이 상처에 침투합니다. 당신의 의식이 흐릿해집니다." },
+            { type: 'quote', text: "심연의 투영: \"이것은 고통이 아니야. 네가 가져야 할 '신의 감각'일 뿐이지.\"" }
         ], choices: [
             { text: "1. [수용] 의식 공유 (Abyss+15, Stability-15)", s: -15, d: 0, a: 15, next: 'SC-04' },
             { text: "2. [거부] 신경 절단 (Stability+10, Abyss-5)", s: 10, d: 0, a: -5, next: 'SC-04' }
         ]},
         'SC-04': { tag: 'SC-04 추락의 기로', artKey: 'S4', isVideo: true, paragraphs: [
-            { type: 'action', text: "절벽 끝. 수은의 바다가 일렁입니다.\n\n월령: \"갈 곳은 없다. 무로 돌아가라.\"" }
+            { type: 'action', text: "절벽 끝. 수은의 바다가 일렁입니다." },
+            { type: 'quote', text: "월령: \"갈 곳은 없다. 무로 돌아가라.\"" }
         ], choices: [
             { text: "1. [도약] 심연으로 투신", next: "BRANCH_S" },
             { text: "2. [저항] 끝까지 맞서기", next: "BRANCH_S" }
@@ -502,7 +503,6 @@
 
     function playBackgroundMusic() {
         if (!bgmAudio) {
-            // 사운드/음악 전용 폴더 설정 경로를 사용하여 오디오 파일 추적
             bgmAudio = new Audio(soundDir + 'Humming Monolith.mp3');
             bgmAudio.loop = true; 
             bgmAudio.volume = 0.4; 
@@ -628,7 +628,7 @@
             const btn = document.createElement('button');
             btn.className = 'choice-btn';
             btn.textContent = choice.text;
-            btn.onclick = () => handleChoice(choice);
+            btn.onclick = () => handleChoice(choice); // 충돌을 일으키던 잔재 코드를 제거하고 통합 이벤트 제어기인 handleChoice를 안정적으로 타겟팅
             container.appendChild(btn);
         });
 
@@ -657,6 +657,17 @@
         state.S += (choice.s || 0);
         state.D += (choice.d || 0);
         state.A += (choice.a || 0);
+
+        // 선택 전환 시 화이트 플래시 효과 연출
+        const flash = document.getElementById('flash');
+        if (flash) {
+            flash.style.opacity = '0.4';
+            flash.style.transition = 'none';
+            setTimeout(() => {
+                flash.style.transition = 'opacity 0.5s';
+                flash.style.opacity = '0';
+            }, 50);
+        }
 
         updateUI(nextKey);
     }
@@ -718,8 +729,8 @@
         if (artPanel) artPanel.classList.add('shake-active');
 
         setTimeout(() => {
-            if (screen) screen.classList.remove('shake-active');
-            if (artPanel) artPanel.classList.remove('shake-active');
+            if (screen) screen.style.animation = '';
+            if (artPanel) artPanel.style.animation = '';
         }, duration);
     }
 
@@ -748,11 +759,11 @@
     }
 
     function drawWatcher(w, h) {
-        let offsetX = (Math.random() - 0.5) * eye.shake;
-        let offsetY = (Math.random() - 0.5) * eye.shake;
+        let offsetX = 0;
+        let offsetY = 0;
         
-        const targetPupilX = (mouse.x - eye.x) / 14;
-        const targetPupilY = (mouse.y - eye.y) / 14;
+        const targetPupilX = (mouse.x - (canvas.width / window.devicePixelRatio) / 2) / 14;
+        const targetPupilY = (mouse.y - (canvas.height / window.devicePixelRatio) / 2) / 14;
         eye.pupilX += (targetPupilX - eye.pupilX) * 0.08;
         eye.pupilY += (targetPupilY - eye.pupilY) * 0.08;
 
@@ -763,9 +774,7 @@
 
         if (currentSize > 1) {
             ctx.beginPath();
-            ctx.moveTo(-currentSize * 1.6, 0);
-            ctx.quadraticCurveTo(0, -currentSize * 0.75, currentSize * 1.6, 0);
-            ctx.quadraticCurveTo(0, currentSize * 0.75, -currentSize * 1.6, 0);
+            ctx.ellipse(0, 0, currentSize * 1.6, currentSize * 0.8, 0, 0, Math.PI * 2);
             
             ctx.fillStyle = "rgba(8, 8, 12, 0.95)"; ctx.shadowColor = "#A3FF00";
             
