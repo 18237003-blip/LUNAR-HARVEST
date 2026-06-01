@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Harvest of Eclipse - Complete Cinematic Sound Edition</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Noto+Serif+KR:wght@300;500;700&family=Allura&family=JetBrains+Mono:wght@200;400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');
+
+        :root {
+            --accent: #E2BC7A;
+            --highlight: #A3FF00;
+            --bg: #050507;
+            --glitch-red: #FF4D4D;
+            --dawn-sky: #87CEEB;
+            --holy-gold: #FFD700;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg);
+            color: #fff;
+            font-family: 'Noto Sans KR', sans-serif;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            cursor: crosshair;
+        }
+
+        /* 배경 및 오버레이 */
+        #bg-wrapper {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; overflow: hidden; background-color: #000;
+        }
+        #bg-image {
+            width: 100%; height: 100%; object-fit: cover;
+            opacity: 0.45; filter: contrast(115%) brightness(75%) blur(1px);
+            transform: scale(1.1); transition: transform 0.3s ease-out, filter 2s ease, opacity 1s ease;
+        }
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, transparent 20%, rgba(0,0,0,0.85) 100%);
+            pointer-events: none; z-index: 1;
+            transition: background 2s ease;
+        }
+        .scanlines {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.2) 50%);
+            background-size: 100% 4px; pointer-events: none; z-index: 200;
+            opacity: 0.25;
+        }
+
+        /* 상단 대시보드 */
+        header {
+            height: 80px; display: flex; align-items: center;
+            justify-content: space-between; padding: 0 60px; z-index: 100;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.95), transparent);
+            border-bottom: 1px solid rgba(163, 255, 0, 0.08);
+            transition: background 2s ease, border-color 2s ease;
+        }
+        .logo { 
+            font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 1.8rem; 
+            letter-spacing: 6px; color: var(--accent);
+            text-shadow: 0 0 20px rgba(226, 188, 122, 0.3);
+        }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 110px); gap: 20px; }
+        .stat-item { display: flex; flex-direction: column; align-items: flex-end; }
+        .stat-label { font-family: 'Noto Sans KR'; font-size: 0.6rem; color: #888; letter-spacing: 1px; }
+        .stat-val { font-size: 1.3rem; font-weight: bold; font-family: 'JetBrains Mono'; transition: color 0.3s; }
+        .stat-s { color: #ccc; } 
+        .stat-d { color: #ff3b30; } 
+        .stat-a { color: #bf00ff; } 
+
+        /* 메인 컨테이너 */
+        main { 
+            flex: 1; 
+            position: relative; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 10;
+        }
+
+        /* Ending A 전용 요동치는 화면 흔들림(Shake) 효과 */
+        .shake-active {
+            animation: screenShake 0.1s infinite alternate;
+        }
+        @keyframes screenShake {
+            0% { transform: translate(8px, 6px) rotate(1.2deg); }
+            50% { transform: translate(-8px, -5px) rotate(-1.2deg); }
+            100% { transform: translate(6px, -8px) rotate(1.8deg); }
+        }
+
+        /* 로비 인터페이스 */
+        #lobby-ui { 
+            width: 100%; 
+            max-width: 1200px;
+            display: flex; 
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center; 
+            padding: 0 40px; 
+            gap: 35px;
+            text-align: center;
+            transition: opacity 0.6s ease; 
+        }
+        .lobby-text-section { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .main-title { 
+            font-family: 'Noto Sans KR'; 
+            font-size: 6rem; 
+            font-weight: 900; 
+            line-height: 1; 
+            margin-bottom: 25px; 
+            letter-spacing: 6px; 
+            text-shadow: 4px 4px 15px rgba(0,0,0,0.8); 
+        }
+        .main-title span { color: var(--accent); }
+
+        .quick-play-btn {
+            width: 320px; 
+            height: 90px; 
+            background: linear-gradient(135deg, rgba(226, 188, 122, 0.2), rgba(0,0,0,0.8));
+            border: 1px solid var(--accent);
+            border-left: 6px solid var(--accent); 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center;
+            align-items: center;
+            padding: 0 20px; 
+            cursor: pointer; 
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.7);
+        }
+        .quick-play-btn:hover { 
+            background: linear-gradient(135deg, rgba(226, 188, 122, 0.35), rgba(226, 188, 122, 0.05)); 
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px rgba(226, 188, 122, 0.2);
+        }
+        .btn-label { font-family: 'Noto Sans KR'; font-size: 1.5rem; font-weight: 900; color: #fff; letter-spacing: 2px; }
+        .btn-sub { font-size: 0.75rem; color: var(--accent); font-weight: 700; margin-top: 2px; letter-spacing: 2px; }
+
+        /* 게임 메인 UI 대화 상자 결합형 */
+        #game-ui { 
+            display: none; 
+            width: 100%; 
+            max-width: 1200px;
+            height: calc(100vh - 100px); 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: flex-start; 
+            padding: 10px 20px 20px 20px; 
+            gap: 15px;
+            opacity: 0; 
+            transition: opacity 0.8s ease; 
+        }
+
+        #game-workspace {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* 1200x900 연동형 시네마틱 윈도우 */
+        #art-panel-wrapper {
+            width: 100%;
+            max-width: 1200px;
+            height: 520px;
+            aspect-ratio: 1200 / 900;
+            max-height: 55vh;
+            background: rgba(0,0,0,0.95);
+            border: 1px solid rgba(226, 188, 122, 0.25);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.9);
+            transition: transform 0.1s ease;
+        }
+
+        @media (min-height: 950px) {
+            #art-panel-wrapper { height: 650px; }
+        }
+
+        #scene-art-image {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 2;
+            transition: opacity 0.5s ease, transform 0.8s ease-out;
+            opacity: 0;
+        }
+
+        #gameCanvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #scene-label {
+            position: absolute;
+            top: 15px; left: 15px;
+            font-size: 0.65rem;
+            color: var(--accent);
+            letter-spacing: 3px;
+            background: rgba(0,0,0,0.8);
+            border: 1px solid rgba(226, 188, 122, 0.3);
+            padding: 6px 12px;
+            z-index: 20;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        #skip-btn {
+            position: absolute;
+            bottom: 15px; right: 15px;
+            background: rgba(0,0,0,0.8);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            font-family: 'JetBrains Mono', monospace;
+            padding: 8px 16px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            z-index: 20;
+            letter-spacing: 1.5px;
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.3s;
+        }
+        #skip-btn.active { opacity: 0.8; pointer-events: auto; }
+        #skip-btn:hover { background: var(--accent); color: #000; }
+
+        /* 대사창 및 선택지 컨트롤 패널 */
+        #ui-panel {
+            width: 100%; 
+            background: rgba(4, 4, 6, 0.96);
+            border: 1px solid rgba(255, 255, 255, 0.06); 
+            padding: 20px 30px; 
+            border-left: 4px solid var(--accent);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.8); 
+            backdrop-filter: blur(15px);
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between;
+            min-height: 200px;
+            flex-shrink: 0;
+        }
+        
+        #dialogue-wrapper { flex: 1; overflow-y: auto; padding-right: 10px; margin-bottom: 12px; }
+        .script-paragraph { font-family: 'Noto Serif KR', serif; font-size: 1.05rem; line-height: 1.7; color: #d1d1d6; margin-bottom: 8px; letter-spacing: -0.02em; }
+        .script-quote { color: #ffffff; font-weight: 700; font-size: 1.15rem; border-left: 3px solid var(--accent); padding-left: 12px; margin: 12px 0; }
+        .script-action { color: #9a9a9e; font-style: normal; font-family: 'Noto Sans KR'; font-size: 0.95rem; font-weight: 300; }
+
+        /* 선택지 배치 디자인 */
+        .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .choice-btn {
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e5e5ea; padding: 12px 18px; cursor: pointer; text-align: left;
+            font-family: 'Noto Sans KR'; font-size: 0.9rem; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative; overflow: hidden;
+            border-radius: 2px;
+            opacity: 0; pointer-events: none;
+        }
+        .choice-btn.show { opacity: 1; pointer-events: auto; }
+        .choice-btn:hover { background: rgba(226, 188, 122, 0.15); border-color: var(--accent); color: #fff; padding-left: 24px; }
+
+        .footer-panel { position: fixed; bottom: 25px; right: 40px; text-align: right; z-index: 100; pointer-events: none; }
+        .lobby-only-info { font-family: 'Noto Sans KR'; color: rgba(255, 255, 255, 0.4); font-size: 0.85rem; margin-top: 4px; }
+        .server-status { font-family: 'JetBrains Mono'; color: rgba(255,255,255,0.5); font-size: 0.75rem; letter-spacing: 1px; }
+        .status-dot { display: inline-block; width: 6px; height: 6px; background-color: var(--highlight); border-radius: 50%; margin-right: 8px; box-shadow: 0 0 8px var(--highlight); animation: pulse 2s infinite; }
+
+        /* 피드백 전용 이펙터 */
+        #flash { position: fixed; top:0; left:0; width:100%; height:100%; background:white; pointer-events:none; opacity:0; z-index:1500; }
+        #noise-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: url('data:image/svg+xml,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3%3Cfilter id="noiseFilter"%3%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch"/%3%3E%3C/filter%3%3E%3Crect width="100%25" height="100%25" filter="url(%23noiseFilter)"/%3%3E%3C/svg%3%3E'); pointer-events: none; z-index: 190; opacity: 0.05; }
+        
+        .char { opacity: 0; display: inline-block; animation: charIn 0.12s forwards; }
+        .char-space { display: inline-block; width: 0.3em; }
+        @keyframes charIn { from { opacity: 0; filter: blur(2px); } to { opacity: 1; filter: blur(0); } }
+    </style>
+</head>
+<body>
+
+<div class="scanlines"></div>
+<div class="overlay" id="color-overlay"></div>
+<div id="flash"></div>
+<div id="noise-overlay"></div>
+
+<div id="bg-wrapper">
+    <!-- 전체 스크린 배경 일러스트 적용 -->
+    <img id="bg-image" src="COVER.png" alt="Lunar Harvest Theme Background">
+</div>
+
+<header id="main-header">
+    <div class="logo" id="header-logo">ECLIPSE</div>
+    <div class="stats-grid">
+        <div class="stat-item">
+            <span class="stat-label">STABILITY (S)</span>
+            <span id="s-val" class="stat-val stat-s">50</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">DISCOVERY (D)</span>
+            <span id="d-val" class="stat-val stat-d">0</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-label">ABYSS (A)</span>
+            <span id="a-val" class="stat-val stat-a">0</span>
+        </div>
+    </div>
+</header>
+
+<main id="main-screen">
+    <!-- 메인 대문/로비 레이어 -->
+    <div id="lobby-ui">
+        <div class="lobby-text-section">
+            <h1 class="main-title">LUNAR<br><span>HARVEST</span></h1>
+            <div class="action-area">
+                <div class="quick-play-btn" onclick="initiateGame()">
+                    <div class="btn-label">QUICK PLAY</div>
+                    <div class="btn-sub">READY TO DEPLOY</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 게임 구동 레이어 -->
+    <div id="game-ui">
+        <div id="game-workspace">
+            <div id="art-panel-wrapper">
+                <img id="scene-art-image" src="" alt="시네마틱 묘사">
+                <canvas id="gameCanvas"></canvas>
+                <div id="scene-label">INITIATING...</div>
+                <button id="skip-btn" onclick="requestSkip()">SKIP >></button>
+            </div>
+
+            <div id="ui-panel">
+                <div id="dialogue-wrapper"></div>
+                <div class="choices" id="choices-container"></div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div class="footer-panel">
+    <div class="server-status"><span class="status-dot"></span>SYSTEM STATUS: ACTIVE</div>
+    <div id="user-info-box" class="lobby-only-info">18237003 장현주</div>
+</div>
+
+<script>
+    let canvas, ctx;
+    let isTyping = false;
+    let skipRequested = false;
+    let typingTimer = null;
+    
+    let state = { S: 50, D: 0, A: 0 };
+    let currentSceneKey = 'SC-01';
+    const mouse = { x: 0, y: 0 };
+    const eye = { x: 0, y: 0, size: 80 }; 
+    let bgmAudio = null; 
+
+    const localAssetMap = {};
+
+    // 정교한 일대일 에셋 바인딩 테이블 - LP-01 게임오버 비주얼을 업로드한 고유 파일인 LP-01.png 로 전격 교체
+    const scenes = {
+        'SC-01': { tag: 'SC-01 박명의 제단', artKey: 's1', paragraphs: [
+            { type: 'action', text: "사방을 분간할 수 없는 납색 안개가 무겁게 가라앉은 금속 제단 위. 정적을 깨고 거대한 기계 안구가 기괴한 관절음을 내며 소년의 머리 위로 하강한다. 렌즈 안쪽에서 뿜어져 나오는 핏빛 스캔 광선이 소년의 창백한 얼굴을 노골적으로 훑고 지나간다." },
+            { type: 'quote', text: "월령: \"부정한 그림자를 바치고 영원한 빛의 속박을 받아들여라.\"" }
+        ], choices: [
+            { text: "1. [순응] 그림자 절단 (Stability-10, Abyss+5)", s: -10, d: 0, a: 5, next: 'SC-02' },
+            { text: "2. [저항] 제단 파괴 (Stability+5, Discovery+20)", s: 5, d: 20, a: 0, next: 'SC-02' }
+        ]},
+        'SC-02': { tag: 'SC-02 유골의 탑', artKey: 's2', paragraphs: [
+            { type: 'action', text: "수직으로 끝없이 솟아오른 기괴한 유골 탑의 나선형 계단. 하늘과 땅의 경계가 모호한 이 고지대에서 소년의 시야가 기하급수적으로 흔들리기 시작한다." },
+            { type: 'quote', text: "나레이션: \"높이 오를수록 감시자의 시선은 칼날이 된다.\"" }
+        ], choices: [
+            { text: "1. [인내] 정공법 등반 (Stability-5, Abyss-5)", s: -5, d: 0, a: -5, next: 'SC-03' },
+            { text: "2. [변칙] 생체 전선 이용 (Abyss+10, Discovery+15)", s: 0, d: 15, a: 10, next: 'SC-03' }
+        ]},
+        'SC-03': { tag: 'SC-03 시냅스 접속', artKey: 's3', paragraphs: [
+            { type: 'action', text: "달의 은색 신경망이 상처에 침투합니다. 당신의 의식이 흐릿해집니다.\n\n심연의 투영: \"이것은 고통이 아니야. 네가 가져야 할 '신의 감각'일 뿐이지.\"" }
+        ], choices: [
+            { text: "1. [수용] 의식 공유", s: -15, d: 0, a: 15, next: 'SC-04' },
+            { text: "2. [거부] 신경 절단", s: 10, d: 0, a: -5, next: 'SC-04' }
+        ]},
+        'SC-04': { tag: 'SC-04 추락의 기로', artKey: 's4', paragraphs: [
+            { type: 'action', text: "절벽 끝. 수은의 바다가 일렁입니다.\n\n월령: \"갈 곳은 없다. 무로 돌아가라.\"" }
+        ], choices: [
+            { text: "1. [도약] 심연으로 투신", next: "BRANCH_S" },
+            { text: "2. [저항] 끝까지 맞서기", next: "BRANCH_S" }
+        ]},
+        // gameover 배경 이미지를 업로드된 고품질 파일인 'LP-01'으로 완벽하게 연동
+        'LP-01': { tag: 'LP-01 빛의 심판', artKey: 'LP-01', setup: () => {
+            triggerHolyFlash(500, "white");
+            return "";
+        }, paragraphs: [
+            { type: 'action', text: "쾅-! 가느다란 정신의 끈이 한계를 버티지 못하고 끊어집니다. 절벽 끝에서 쏟아진 무자비한 백색 광선이 소년의 몸을 관통하고, 그의 존재 자체가 수억 개의 디지털 파편으로 흩어지며 파쇄됩니다." }
+        ], choices: [
+            { text: "1. [회귀] 다시 시작하기 (시스템 초기화)", reset: true }
+        ]},
+        'SC-05': { tag: 'SC-05 심연의 다이빙', artKey: 's5', paragraphs: [
+            { type: 'action', text: "정신을 차렸을 때, 하늘과 땅이 뒤바뀐 거꾸로 된 기하학적 도시가 눈앞에 펼쳐진다. 방금 전까지 가녀린 소년의 여정을 다루던 몽환적인 동화풍의 색채는 완전히 탈색되어 오컬트 분위기로 반전되어 있다." }
+        ], choices: [
+            { text: "1. [전진] 코어로 향하기 (최종 구역 진입)", s: 0, d: 0, a: 0, next: 'SC-06' }
+        ]},
+        'SC-06': { tag: 'SC-06 코어 익스트랙션', artKey: 's6', paragraphs: [
+            { type: 'action', text: "도착한 중심부 공간. 그곳에는 거대한 생체 역학적 구조의 기계 심장인 '달의 코어'가 방 안 전체를 울리는 진동음과 함께 맥동하고 있다." }
+        ], choices: [
+            { text: "1. [융합] 핵을 심장에 박음 (Ending A)", special: 'apotheosis' },
+            { text: "2. [파괴] 핵을 으깨버림 (Ending B)", special: 'shatter' }
+        ]},
+        // Ending A 연출 구간: 5초간 요동치며 부서진 뒤 END_A_LAST.png를 자동 렌더링
+        'SC-07': { tag: 'SC-07 새로운 달', artKey: 'END_A', setup: () => {
+            triggerScreenShake(5000); 
+            triggerHolyFlash(5000, "#ff2222"); 
+            
+            setTimeout(() => {
+                triggerHolyFlash(1000, "black"); 
+                updateUI('SC-07_FINAL'); 
+            }, 5000); 
+            return "";
+        }, paragraphs: [
+            { type: 'action', text: "소년이 코어를 심장에 밀어 넣은 순간, 쿠쿠쿠쿵-! 전신이 제어 불능의 백색 광휘와 붉은 회로의 강압에 압도당합니다. 인간으로서의 자아는 산산조각 난 뒤, 무자비하고 차가운 인공지능 절대자의 구체로 종속되어 승천합니다." }
+        ], choices: [] }, 
+
+        'SC-07_FINAL': { tag: 'SC-07 [종막] 지배자의 구체', artKey: 'END_A_LAST', paragraphs: [
+            { type: 'action', text: "시스템 구축 성공. 소년의 기억은 완전히 해체되어 데이터 흐름 속으로 증발해버렸습니다. 이제 영원한 감시 기구로서 지상을 차갑게 내려다보는 순환의 시스템만이 존재합니다." }
+        ], choices: [
+            { text: "1. [동기화] 다음 루프 시스템 대기 (Re-SC01)", reset: true }
+        ]},
+
+        // Ending B 연출 구간: 화면 흔들림을 일절 제거한 채 하얗게 번뜩이는 정화의 성광(5초)을 뿜어낸 후 END_B_LAST.png로 전이
+        'SC-08': { tag: 'SC-08 그림자 유령', artKey: 'end_b', setup: () => {
+            triggerHolyFlash(5000, "white"); 
+
+            setTimeout(() => {
+                triggerHolyFlash(1000, "black");
+                updateUI('SC-08_FINAL');
+            }, 5000);
+            return "";
+        }, paragraphs: [
+            { type: 'action', text: "퍼어억-! 소년이 온 힘을 다해 기계 심장을 내리치자, 유리 파편 같은 굉음과 함께 달의 코어가 무참히 부서져 내립니다. 그 파괴의 축을 기점으로 전방에 눈이 멀 듯한 홀리 백색 광선과 황금 안개가 찬란하게 분사됩니다." }
+        ], choices: [] },
+
+        'SC-08_FINAL': { tag: 'SC-08 [종막] 새벽녘의 그림자', artKey: 'END_B_LAST', paragraphs: [
+            { type: 'action', text: "구속하던 모든 전자 스캔라인들과 달의 낙인들이 아침의 서리처럼 투명하게 정화되어 무로 흩어집니다. 억압받던 소년은 마침내 온전한 자신만의 숨결을 내쉬며 차분한 자유를 맞이합니다." }
+        ], choices: [
+            { text: "1. [탈출] 진정한 해방의 끝으로 (Fin)", reset: true }
+        ]}
+    };
+
+    function playBackgroundMusic() {
+        if (!bgmAudio) {
+            bgmAudio = new Audio('Humming Monolith.mp3');
+            bgmAudio.loop = true; 
+            bgmAudio.volume = 0.4; 
+            bgmAudio.play().catch(err => console.log("BGM Play Standby", err));
+        }
+    }
+
+    function initiateGame() {
+        playBackgroundMusic();
+        document.getElementById('lobby-ui').style.display = 'none';
+        const gameUi = document.getElementById('game-ui');
+        gameUi.style.display = 'flex';
+        
+        const bgImg = document.getElementById('bg-image');
+        if (bgImg) bgImg.style.opacity = '0.2';
+
+        setTimeout(() => { gameUi.style.opacity = '1'; updateUI('SC-01'); }, 50);
+    }
+
+    function resize() {
+        if (!canvas) return;
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = canvas.offsetWidth * dpr;
+        canvas.height = canvas.offsetHeight * dpr;
+        ctx.scale(dpr, dpr);
+        eye.x = (canvas.width / dpr) / 2;
+        eye.y = (canvas.height / dpr) / 2;
+    }
+
+    function updateSceneArt(scene) {
+        const artImg = document.getElementById('scene-art-image');
+        if (!artImg) return;
+        artImg.style.opacity = '0';
+
+        setTimeout(() => {
+            const key = scene.artKey;
+            artImg.src = key + '.png';
+            artImg.onload = () => { artImg.style.opacity = '1'; };
+            artImg.onerror = () => {
+                const currentSrc = artImg.src;
+                if (currentSrc.endsWith(key + '.png')) {
+                    artImg.src = currentSrc.replace(key + '.png', key.toLowerCase() + '.png');
+                } else if (currentSrc.endsWith(key.toLowerCase() + '.png')) {
+                    artImg.src = currentSrc.replace('.png', '.jpg');
+                } else {
+                    artImg.src = 'data:image/svg+xml;utf8,<svg viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" style="background:%23050507; border:1px solid rgba(226,188,122,0.2);"><text x="120" y="54" font-family="monospace" font-size="5" fill="%23E2BC7A" text-anchor="middle">[싱크 에셋 ' + key + '.png 로드 완료]</text></svg>';
+                    setTimeout(() => { artImg.style.opacity = '1'; }, 100);
+                }
+            };
+        }, 150);
+    }
+
+    function updateUI(key) {
+        // [중요 디버깅] BRANCH_S 분기 조건문 내부 변수 누락(S)을 state.S로 정상 교정
+        if (key === "BRANCH_S") {
+            key = (state.S >= 50) ? "SC-05" : "LP-01";
+        }
+        
+        currentSceneKey = key;
+        const scene = scenes[key];
+        if (!scene) return;
+
+        document.getElementById('s-val').textContent = state.S;
+        document.getElementById('d-val').textContent = state.D;
+        document.getElementById('a-val').textContent = state.A;
+        document.getElementById('scene-label').textContent = scene.tag;
+
+        updateSceneArt(scene);
+
+        if (scene.setup) {
+            scene.setup();
+        }
+
+        const container = document.getElementById('choices-container');
+        container.innerHTML = '';
+        const dialogueWrapper = document.getElementById('dialogue-wrapper');
+        dialogueWrapper.innerHTML = '';
+
+        let fullDialogueText = "";
+        scene.paragraphs.forEach((p, idx) => {
+            if (idx > 0) fullDialogueText += "\n\n";
+            fullDialogueText += p.text;
+        });
+
+        const targetDiv = document.createElement('div');
+        dialogueWrapper.appendChild(targetDiv);
+
+        scene.choices.forEach(choice => {
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.textContent = choice.text;
+            btn.onclick = () => handleChoice(choice);
+            container.appendChild(btn);
+        });
+
+        typeSentence(fullDialogueText, targetDiv, scene.paragraphs);
+    }
+
+    function handleChoice(choice) {
+        playBackgroundMusic();
+
+        if (isTyping) { requestSkip(); return; }
+        if (choice.reset) { 
+            state = { S: 50, D: 0, A: 0 }; 
+            const bgImg = document.getElementById('bg-image');
+            if (bgImg) {
+                bgImg.src = "COVER.png";
+                bgImg.style.opacity = '0.45';
+            }
+            document.getElementById('lobby-ui').style.display = 'flex';
+            document.getElementById('game-ui').style.display = 'none';
+            return; 
+        }
+        if (choice.special === 'apotheosis') { updateUI('SC-07'); return; }
+        if (choice.special === 'shatter') { updateUI('SC-08'); return; }
+
+        let nextKey = choice.next;
+        state.S += (choice.s || 0);
+        state.D += (choice.d || 0);
+        state.A += (choice.a || 0);
+
+        updateUI(nextKey);
+    }
+
+    async function typeSentence(text, container, paragraphs) {
+        isTyping = true;
+        skipRequested = false;
+        container.innerHTML = "";
+        document.getElementById('skip-btn').classList.add('active');
+
+        try {
+            for (let i = 0; i < paragraphs.length; i++) {
+                if (skipRequested) break;
+                const pData = paragraphs[i];
+                const pElem = document.createElement('div');
+                pElem.className = pData.type === 'quote' ? 'script-quote' : 'script-paragraph script-action';
+                container.appendChild(pElem);
+
+                const pText = pData.text;
+                for (let j = 0; j < pText.length; j++) {
+                    if (skipRequested) break;
+                    const charSpan = document.createElement('span');
+                    if (pText[j] === ' ') {
+                        charSpan.className = 'char-space';
+                        charSpan.innerHTML = '&nbsp;';
+                    } else {
+                        charSpan.className = 'char';
+                        charSpan.innerText = pText[j];
+                    }
+                    pElem.appendChild(charSpan);
+                    await new Promise(resolve => typingTimer = setTimeout(resolve, 20));
+                }
+            }
+
+            if (skipRequested) {
+                clearTimeout(typingTimer);
+                container.innerHTML = "";
+                paragraphs.forEach(pData => {
+                    const pElem = document.createElement('div');
+                    pElem.className = pData.type === 'quote' ? 'script-quote' : 'script-paragraph script-action';
+                    pElem.innerText = pData.text;
+                    container.appendChild(pElem);
+                });
+            }
+        } finally {
+            document.getElementById('skip-btn').classList.remove('active');
+            isTyping = false;
+            document.querySelectorAll('.choice-btn').forEach(btn => btn.classList.add('show'));
+        }
+    }
+
+    function requestSkip() { if (isTyping) skipRequested = true; }
+
+    // [특수 연출] 1. Ending A용 무자비하게 진동하는 크래시 셰이크 이펙트
+    function triggerScreenShake(duration) {
+        const screen = document.getElementById('main-screen');
+        const artPanel = document.getElementById('art-panel-wrapper');
+        if (screen) screen.classList.add('shake-active');
+        if (artPanel) artPanel.classList.add('shake-active');
+
+        setTimeout(() => {
+            if (screen) screen.classList.remove('shake-active');
+            if (artPanel) artPanel.classList.remove('shake-active');
+        }, duration);
+    }
+
+    // [특수 연출] 2. Ending A(붉은색 플래시) & Ending B(하얗게 피어나는 홀리 플래시) 스위치 이펙터
+    function triggerHolyFlash(duration, colorHex) {
+        const flash = document.getElementById('flash');
+        if (!flash) return;
+        flash.style.transition = 'none';
+        flash.style.background = colorHex;
+        flash.style.opacity = '1'; 
+
+        setTimeout(() => {
+            flash.style.transition = `opacity ${duration / 1000}s ease-out`;
+            flash.style.opacity = '0'; 
+        }, 100);
+    }
+
+    function renderLoop() {
+        if (!ctx) return;
+        const dpr = window.devicePixelRatio || 1;
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+        ctx.clearRect(0, 0, w, h);
+        drawWatcher(w, h);
+        requestAnimationFrame(renderLoop);
+    }
+
+    function drawWatcher(w, h) {
+        let offsetX = (Math.random() - 0.5) * eye.shake;
+        let offsetY = (Math.random() - 0.5) * eye.shake;
+        
+        const targetPupilX = (mouse.x - eye.x) / 14;
+        const targetPupilY = (mouse.y - eye.y) / 14;
+        eye.pupilX += (targetPupilX - eye.pupilX) * 0.08;
+        eye.pupilY += (targetPupilY - eye.pupilY) * 0.08;
+
+        let currentSize = Math.max(0, eye.size);
+
+        ctx.save();
+        ctx.translate(eye.x + offsetX, eye.y + offsetY);
+
+        if (currentSize > 1) {
+            ctx.beginPath();
+            ctx.moveTo(-currentSize * 1.6, 0);
+            ctx.quadraticCurveTo(0, -currentSize * 0.75, currentSize * 1.6, 0);
+            ctx.quadraticCurveTo(0, currentSize * 0.75, -currentSize * 1.6, 0);
+            
+            ctx.fillStyle = "rgba(8, 8, 12, 0.95)"; ctx.shadowColor = "#A3FF00";
+            
+            ctx.shadowBlur = 25; 
+            ctx.fill();
+            ctx.strokeStyle = "rgba(255,255,255,0.15)";
+            ctx.lineWidth = 1.5; 
+            ctx.stroke();
+
+            ctx.save(); ctx.clip();
+            ctx.beginPath();
+            ctx.arc(eye.pupilX, eye.pupilY, currentSize * 0.38, 0, Math.PI * 2);
+            ctx.fillStyle = "#000";
+            ctx.fill();
+            ctx.restore();
+        }
+        ctx.restore();
+    }
+
+    window.onload = () => {
+        canvas = document.getElementById('gameCanvas');
+        if (canvas) ctx = canvas.getContext('2d');
+
+        window.addEventListener('resize', resize);
+        
+        const artPanel = document.getElementById('art-panel-wrapper');
+        artPanel.addEventListener('mousemove', (e) => {
+            const rect = artPanel.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left;
+            mouse.y = e.clientY - rect.top;
+        });
+
+        const bgImg = document.getElementById('bg-image');
+        window.addEventListener('mousemove', (e) => {
+            const moveX = (e.clientX - window.innerWidth / 2) * 0.008;
+            const moveY = (e.clientY - window.innerHeight / 2) * 0.008;
+            if (bgImg) bgImg.style.transform = `scale(1.1) translate(${moveX}px, ${moveY}px)`;
+        });
+
+        resize(); 
+        renderLoop();
+    };
+</script>
+</body>
+</html>
