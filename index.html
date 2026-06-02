@@ -320,7 +320,8 @@
     <img id="bg-image" src="" alt="Lunar Harvest Theme Background">
 </div>
 
-<header id="main-header">
+<header>
+    <div style="font-size: 0.7rem; opacity: 0.5;">SYS-0XFF12</div>
     <div class="logo" id="header-logo">ECLIPSE</div>
     <div class="stats-grid">
         <div class="stat-item">
@@ -402,6 +403,7 @@
     let isTyping = false;
     let skipRequested = false;
     let typingTimer = null;
+    let shakeTimeout = null; // 흔들림 해제 타이머 안전 저장소
     
     let state = { S: 50, D: 0, A: 0 };
     let currentSceneKey = 'SC-01';
@@ -422,7 +424,7 @@
         ]},
         'SC-02': { tag: 'SC-02 유골의 탑', artKey: 'S2', isVideo: true, paragraphs: [
             { type: 'action', text: "수직으로 끝없이 솟아오른 기괴한 유골 탑의 나선형 계단. 하늘과 땅의 경계가 모호한 이 고지대에서 소년의 시야가 기하급수적으로 흔들리기 시작한다." },
-            { type: 'action', text: "나레이션: 높이 오를수록 감시자의 시선은 칼날이 된다." }
+            { type: 'quote', text: "\"높이 오를수록 감시자의 시선은 칼날이 된다.\"" }
         ], choices: [
             { text: "1. [인내] 정공법 등반 (Stability-5, Abyss-5)", s: -5, d: 0, a: -5, next: 'SC-03' },
             { text: "2. [변칙] 생체 전선 이용 (Abyss+10, Discovery+15)", s: 0, d: 15, a: 10, next: 'SC-03' }
@@ -461,7 +463,7 @@
             { text: "1. [융합] 핵을 심장에 박음 (Ending A)", special: 'apotheosis' },
             { text: "2. [파괴] 핵을 으깨버림 (Ending B)", special: 'shatter' }
         ]},
-        // Ending A 연출 구간: 5초간 요동치며 부서진 뒤 END_A_LAST.png를 자동 렌더링
+        // Ending A 연출 구간: 정확히 5초 뒤에 END_A_LAST 로 완전히 흔들림 없이 깨끗하게 이월
         'SC-07': { tag: 'SC-07 새로운 달', artKey: 'END_A', isVideo: true, setup: () => {
             triggerScreenShake(5000); 
             triggerHolyFlash(5000, "#ff2222"); 
@@ -481,7 +483,7 @@
             { text: "1. [동기화] 다음 루프 시스템 대기 (Re-SC01)", reset: true }
         ]},
 
-        // Ending B 연출 구간: 화면 흔들림을 일절 제거한 채 하얗게 번뜩이는 정화의 성광(5초)을 뿜어낸 후 END_B_LAST.png로 전이
+        // Ending B 연출 구간: 화면 흔들림을 일절 제거한 채 하얗게 번뜩이는 정화의 성광(5초)을 뿜어낸 후 END_B_LAST로 전이
         'SC-08': { tag: 'SC-08 그림자 유령', artKey: 'END_B', isVideo: true, setup: () => {
             triggerHolyFlash(5000, "white"); 
 
@@ -590,6 +592,9 @@
     }
 
     function updateUI(key) {
+        // [디버깅] 다음 장면 업데이트 전에 이전 씬의 잔류 흔들림 효과 강제 강제 소거
+        stopScreenShake();
+
         // BRANCH_S 분기 조건문 내부 변수 누락 방지 (state.S 기반 판정)
         if (key === "BRANCH_S") {
             key = (state.S >= 50) ? "SC-05" : "LP-01";
@@ -628,7 +633,7 @@
             const btn = document.createElement('button');
             btn.className = 'choice-btn';
             btn.textContent = choice.text;
-            btn.onclick = () => handleChoice(choice); // 충돌을 일으키던 잔재 코드를 제거하고 통합 이벤트 제어기인 handleChoice를 안정적으로 타겟팅
+            btn.onclick = () => handleChoice(choice);
             container.appendChild(btn);
         });
 
@@ -721,20 +726,37 @@
 
     function requestSkip() { if (isTyping) skipRequested = true; }
 
-    // [특수 연출] 1. Ending A용 무자비하게 진동하는 크래시 셰이크 이펙트
+    // [특수 연출] 1. Ending A용 무자비하게 진동하는 크래시 셰이크 이펙트 가동 장치
     function triggerScreenShake(duration) {
+        // 기존 실행 중이던 흔들림 소거 타이머 해제
+        if (shakeTimeout) {
+            clearTimeout(shakeTimeout);
+            shakeTimeout = null;
+        }
+
         const screen = document.getElementById('main-screen');
         const artPanel = document.getElementById('art-panel-wrapper');
         if (screen) screen.classList.add('shake-active');
         if (artPanel) artPanel.classList.add('shake-active');
 
-        setTimeout(() => {
-            if (screen) screen.style.animation = '';
-            if (artPanel) artPanel.style.animation = '';
+        shakeTimeout = setTimeout(() => {
+            stopScreenShake();
         }, duration);
     }
 
-    // [특수 연출] 2. Ending A(붉은색 플래시) & Ending B(하얗게 피어나는 홀리 플래시) 스위치 이펙터
+    // [특수 연출] 2. 화면 흔들림 즉각 소멸 안전 기능 (버그 원천 소거)
+    function stopScreenShake() {
+        if (shakeTimeout) {
+            clearTimeout(shakeTimeout);
+            shakeTimeout = null;
+        }
+        const screen = document.getElementById('main-screen');
+        const artPanel = document.getElementById('art-panel-wrapper');
+        if (screen) screen.classList.remove('shake-active');
+        if (artPanel) artPanel.classList.remove('shake-active');
+    }
+
+    // [특수 연출] 3. Ending A(붉은색 플래시) & Ending B(하얗게 피어나는 홀리 플래시) 스위치 이펙터
     function triggerHolyFlash(duration, colorHex) {
         const flash = document.getElementById('flash');
         if (!flash) return;
