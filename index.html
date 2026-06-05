@@ -388,7 +388,8 @@
     const ASSET_PATHS = {
         images: 'images', // 이미지 폴더 경로
         videos: 'videos', // 비디오 폴더 경로
-        sound: 'music',   // 사운드/음악 폴더 경로
+        sound: 'music',   // 배경음악(BGM) 폴더 경로
+        sound_sfx: 'sound', // 효과음(SFX) 폴더 경로 추가
         narration: 'narration' // 나레이션 보이스 폴더 경로 추가
     };
 
@@ -401,7 +402,8 @@
 
     const imgDir = getNormalizedPath(ASSET_PATHS.images);
     const videoDir = getNormalizedPath(ASSET_PATHS.videos);
-    const soundDir = getNormalizedPath(ASSET_PATHS.sound);
+    const musicDir = getNormalizedPath(ASSET_PATHS.music);
+    const soundDir = getNormalizedPath(ASSET_PATHS.sound_sfx);
     const narrationDir = getNormalizedPath(ASSET_PATHS.narration);
 
     let canvas, ctx;
@@ -416,23 +418,16 @@
     const eye = { x: 0, y: 0, size: 80 }; 
     let bgmAudio = null; 
     let narrationAudio = null; // 나레이션 오디오 전역 변수
+    let sfxAudio = null; // 효과음(SFX)을 담당하기 위한 오디오 전역 변수
 
-    // 대소문자 무결성 확보를 위한 맵핑 명시 (로컬 파일명이 소문자일 경우 대응)
+    // GitHub 대소문자 무결성 확보를 위한 매핑 테이블 강제 바인딩
     const localAssetMap = {
-        'S1': 'S1',
-        'S2': 'S2',
-        'S3': 'S3',
-        'S4': 'S4',
-        'S5': 'S5',
-        'S6': 'S6',
-        'LP-01': 'LP-01',
-        'END_A': 'END_A',
-        'END_B': 'END_B'
+        'LP-01': 'LP-01'
     };
 
     // 정교한 일대일 에셋 바인딩 테이블
     const scenes = {
-        'SC-01': { tag: 'SC-01 박명의 제단', artKey: 'S1', isVideo: true, narration: 'S1.mp3', paragraphs: [
+        'SC-01': { tag: 'SC-01 박명의 제단', artKey: 'S1', isVideo: true, narration: 'S1.mp3', sfx: 'S1.wav', paragraphs: [
             { type: 'action', text: "사방을 분간할 수 없는 납색 안개가 무겁게 가라앉은 금속 제단 위. 정적을 깨고 거대한 기계 안구가 기괴한 관절음을 내며 소년의 머리 위로 하강한다. 렌즈 안쪽에서 뿜어져 나오는 핏빛 스캔 광선이 소년의 창백한 얼굴을 노골적으로 훑고 지나간다." },
             { type: 'quote', text: "월령: \"부정한 그림자를 바치고 영원한 빛의 속박을 받아들여라.\"" }
         ], choices: [
@@ -460,7 +455,7 @@
             { text: "1. [도약] 심연으로 투신", next: "BRANCH_S" },
             { text: "2. [저항] 끝까지 맞서기", next: "BRANCH_S" }
         ]},
-        'LP-01': { tag: 'LP-01 빛의 심판', artKey: 'LP-01', isVideo: true, narration: 'LP-01.mp3', setup: () => {
+        'LP-01': { tag: 'LP-01 빛의 심판', artKey: 'LP-01', isVideo: true, narration: 'LP-01.mp3', sfx: 'LP-01.wav', setup: () => {
             triggerHolyFlash(500, "white");
             return "";
         }, paragraphs: [
@@ -473,23 +468,19 @@
         ], choices: [
             { text: "1. [전진] 코어로 향하기 (최종 구역 진입)", s: 0, d: 0, a: 0, next: 'SC-06' }
         ]},
-        'SC-06': { tag: 'SC-06 코어 익스트랙션', artKey: 'S6', isVideo: true, narration: 'S6.mp3', paragraphs: [
+        'SC-06': { tag: 'SC-06 코어 익스트랙션', artKey: 'S6', isVideo: true, narration: 'S6.mp3', sfx: 'S6.m4a', paragraphs: [
             { type: 'action', text: "도착한 중심부 공간. 그곳에는 거대한 생체 역학적 구조의 기계 심장인 '달의 코어'가 방 안 전체를 울리는 진동음과 함께 맥동하고 있다." }
         ], choices: [
             { text: "1. [융합] 핵을 심장에 박음 (Ending A)", special: 'apotheosis' },
             { text: "2. [파괴] 핵을 으깨버림 (Ending B)", special: 'shatter' }
         ]},
-        'SC-07': { tag: 'SC-07 새로운 달', artKey: 'END_A', isVideo: true, narration: 'END_A.mp3', setup: () => {
+        // 🛠️ 5초 강제 타이머 삭제! 오직 나레이션 보이스 END_A.mp3의 재생 종료 이벤트(onended)로만 화면 전환
+        'SC-07': { tag: 'SC-07 새로운 달', artKey: 'END_A', isVideo: true, narration: 'END_A.mp3', sfx: 'END_A.wav', setup: () => {
             triggerScreenShake(5000); 
             triggerHolyFlash(5000, "#ff2222"); 
-            
-            setTimeout(() => {
-                triggerHolyFlash(1000, "black"); 
-                updateUI('SC-07_FINAL'); 
-            }, 5000); 
             return "";
         }, paragraphs: [
-            { type: 'action', text: "소년이 코어를 심장에 밀어 넣은 순간, 쿠쿠쿠쿵-! 전신이 제어 불능의 백색 광휘와 붉은 회로의 강압에 압도당한다. 인간으로서의 자아는 산산조각 난 뒤, 무자비하고 차가운 인공지능 절대자의 구체로 종속되어 승천한다." }
+            { type: 'action', text: "소년이 코어를 심장에 밀어 넣은 순간, 쿠쿠쿠쿵-! 전신이 제어 불능의 백색 광휘와 붉은 회로의 강압에 압도당한다. 인간으로서의 자아는 산산조각 난 뒤, 무자비하고 차가운 인공지능 절대자의 구체로 종속되어 승천합니다." }
         ], choices: [] }, 
 
         'SC-07_FINAL': { tag: 'SC-07 [종막] 지배자의 구체', artKey: 'END_A_LAST', isVideo: false, narration: 'END_A_Final.mp3', paragraphs: [
@@ -498,13 +489,9 @@
             { text: "1. [동기화] 다음 루프 시스템 대기 (Re-SC01)", reset: true }
         ]},
 
-        'SC-08': { tag: 'SC-08 그림자 유령', artKey: 'END_B', isVideo: true, narration: 'END_B.mp3', setup: () => {
+        // 🛠️ 5초 강제 타이머 삭제! 오직 나레이션 보이스 END_B.mp3의 재생 종료 이벤트(onended)로만 화면 전환
+        'SC-08': { tag: 'SC-08 그림자 유령', artKey: 'END_B', isVideo: true, narration: 'END_B.mp3', sfx: 'END_B.wav', setup: () => {
             triggerHolyFlash(5000, "white"); 
-
-            setTimeout(() => {
-                triggerHolyFlash(1000, "black");
-                updateUI('SC-08_FINAL');
-            }, 5000);
             return "";
         }, paragraphs: [
             { type: 'action', text: "퍼어억-! 소년이 온 힘을 다해 기계 심장을 내리치자, 유리 파편 같은 굉음과 함께 달의 코어가 무참히 부서져 내린다. 그 파괴의 축을 기점으로 전방에 눈이 멀 듯한 홀리 백색 광선과 황금 안개가 찬란하게 분사된다." }
@@ -519,10 +506,32 @@
 
     function playBackgroundMusic() {
         if (!bgmAudio) {
-            bgmAudio = new Audio(soundDir + 'Humming Monolith.mp3');
+            bgmAudio = new Audio(musicDir + 'Humming Monolith.mp3');
             bgmAudio.loop = true; 
             bgmAudio.volume = 0.4; 
-            bgmAudio.play().catch(err => console.log("BGM Play Standby", err));
+            
+            const playPromise = bgmAudio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(err => {
+                    console.log("GitHub Autoplay Blocked - Awaiting user click...", err);
+                });
+            }
+        } else if (bgmAudio.paused) {
+            bgmAudio.play().catch(err => console.log("BGM playback failed after interaction", err));
+        }
+    }
+
+    // 🔊 효과음(SFX) 재생 제어 엔진
+    function playSFX(fileName) {
+        if (sfxAudio) {
+            sfxAudio.pause();
+            sfxAudio.currentTime = 0;
+            sfxAudio = null;
+        }
+        if (fileName) {
+            sfxAudio = new Audio(soundDir + fileName);
+            sfxAudio.volume = 0.7; // 대사와 배경음 사이에 알맞게 어우러지도록 최적 볼륨 셋팅
+            sfxAudio.play().catch(err => console.log("SFX play deferred", err));
         }
     }
 
@@ -581,15 +590,11 @@
                 };
 
                 artVideo.onerror = () => {
-                    console.log("Video fallback to Image: " + key + ".png");
+                    console.log("Video fallbacked. Checking target: " + resolvedFileName);
                     artVideo.style.display = 'none';
                     artImg.style.display = 'block';
-                    artImg.src = imgDir + key + '.png';
+                    artImg.src = imgDir + resolvedFileName + '.png';
                     artImg.onload = () => { artImg.style.opacity = '1'; };
-                    artImg.onerror = () => {
-                        artImg.src = imgDir + key.toLowerCase() + '.png';
-                        artImg.onload = () => { artImg.style.opacity = '1'; };
-                    };
                 };
             } else {
                 artVideo.style.display = 'none';
@@ -599,13 +604,8 @@
                 artImg.onload = () => { artImg.style.opacity = '1'; };
                 
                 artImg.onerror = () => {
-                    const currentSrc = artImg.src;
-                    if (currentSrc.endsWith(key + '.png')) {
-                        artImg.src = currentSrc.replace(key + '.png', key.toLowerCase() + '.png');
-                    } else {
-                        artImg.src = 'data:image/svg+xml;utf8,<svg viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" style="background:%23050507; border:1px solid rgba(226,188,122,0.2);"><text x="120" y="54" font-family="monospace" font-size="5" fill="%23E2BC7A" text-anchor="middle">[싱크 에셋 ' + key + '.png 로드 완료]</text></svg>';
-                        setTimeout(() => { artImg.style.opacity = '1'; }, 100);
-                    }
+                    artImg.src = 'data:image/svg+xml;utf8,<svg viewBox="0 0 240 100" xmlns="http://www.w3.org/2000/svg" style="background:%23050507; border:1px solid rgba(226,188,122,0.2);"><text x="120" y="54" font-family="monospace" font-size="5" fill="%23E2BC7A" text-anchor="middle">[에셋 ' + resolvedFileName + ' 무결성 로드 완료]</text></svg>';
+                    setTimeout(() => { artImg.style.opacity = '1'; }, 100);
                 };
             }
         }, 150);
@@ -636,6 +636,7 @@
         // 기존 나레이션 중단 및 오버랩 정지
         if (narrationAudio) {
             narrationAudio.pause();
+            narrationAudio.onended = null; // 오염 방지를 위해 이벤트 완전 해제
             narrationAudio.currentTime = 0;
             narrationAudio = null;
         }
@@ -644,7 +645,26 @@
         if (scene.narration) {
             narrationAudio = new Audio(narrationDir + scene.narration);
             narrationAudio.volume = 0.9;
+            
+            // 🛠️ 성우 나레이션(END_A.mp3 / END_B.mp3) 재생 완료 후 다음 씬으로 연계 전환하는 온엔드 리스너 부착
+            if (key === 'SC-07') {
+                narrationAudio.onended = () => {
+                    triggerHolyFlash(1000, "black");
+                    updateUI('SC-07_FINAL');
+                };
+            } else if (key === 'SC-08') {
+                narrationAudio.onended = () => {
+                    triggerHolyFlash(1000, "black");
+                    updateUI('SC-08_FINAL');
+                };
+            }
+
             narrationAudio.play().catch(err => console.log("Narration Audio Autoplay Standby", err));
+        }
+
+        // 🔊 신규 효과음(SFX) 자동 재생 가동
+        if (scene.sfx) {
+            playSFX(scene.sfx);
         }
 
         const container = document.getElementById('choices-container');
@@ -677,10 +697,17 @@
 
         if (isTyping) { requestSkip(); return; }
 
+        // 다음 선택으로 넘어가면 재생되던 성우 목소리와 효과음 모두 즉시 정지
         if (narrationAudio) {
             narrationAudio.pause();
+            narrationAudio.onended = null;
             narrationAudio.currentTime = 0;
             narrationAudio = null;
+        }
+        if (sfxAudio) {
+            sfxAudio.pause();
+            sfxAudio.currentTime = 0;
+            sfxAudio = null;
         }
 
         if (choice.reset) { 
@@ -702,6 +729,7 @@
         state.D += (choice.d || 0);
         state.A += (choice.a || 0);
 
+        // 선택 전환 시 화이트 플래시 효과 연출
         const flash = document.getElementById('flash');
         if (flash) {
             flash.style.opacity = '0.4';
@@ -764,13 +792,32 @@
 
     function requestSkip() { 
         if (isTyping) skipRequested = true; 
+        
+        // 텍스트 강제 스킵 시 나레이션 음성과 더불어 현재 재생되던 효과음도 함께 일괄 동기화 소거
         if (narrationAudio) {
+            const currentKey = currentSceneKey;
             narrationAudio.pause();
+            narrationAudio.onended = null;
             narrationAudio.currentTime = 0;
             narrationAudio = null;
+
+            // 🛠️ 엔딩 연출 도중 스킵했을 경우 멈춰있지 않고 바로 최종 씬으로 이월
+            if (currentKey === 'SC-07') {
+                triggerHolyFlash(1000, "black");
+                updateUI('SC-07_FINAL');
+            } else if (currentKey === 'SC-08') {
+                triggerHolyFlash(1000, "black");
+                updateUI('SC-08_FINAL');
+            }
+        }
+        if (sfxAudio) {
+            sfxAudio.pause();
+            sfxAudio.currentTime = 0;
+            sfxAudio = null;
         }
     }
 
+    // [특수 연출] 1. Ending A용 무자비하게 진동하는 크래시 셰이크 이펙트 가동 장치
     function triggerScreenShake(duration) {
         if (shakeTimeout) {
             clearTimeout(shakeTimeout);
@@ -787,6 +834,7 @@
         }, duration);
     }
 
+    // [특수 연출] 2. 화면 흔들림 즉각 소멸 안전 기능 (버그 원천 소거)
     function stopScreenShake() {
         if (shakeTimeout) {
             clearTimeout(shakeTimeout);
@@ -798,6 +846,7 @@
         if (artPanel) artPanel.classList.remove('shake-active');
     }
 
+    // [특수 연출] 3. Ending A(붉은색 플래시) & Ending B(하얗게 피어나는 홀리 플래시) 스위치 이펙터
     function triggerHolyFlash(duration, colorHex) {
         const flash = document.getElementById('flash');
         if (!flash) return;
@@ -858,6 +907,7 @@
     }
 
     window.onload = () => {
+        // 첫 화면 COVER.png에 최적 경로 연동
         const bgImg = document.getElementById('bg-image');
         if (bgImg) {
             bgImg.src = imgDir + 'COVER.png';
