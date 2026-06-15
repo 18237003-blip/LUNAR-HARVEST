@@ -540,7 +540,7 @@
 
     function playBackgroundMusic() {
         if (!bgmAudio) {
-            bgmAudio = new Audio(musicDir + 'Humming Monolith.mp3');
+            bgmAudio = new Audio(musicDir + 'Humming%20Monolith.mp3');
             bgmAudio.loop = true; 
             bgmAudio.volume = 0.4; 
             
@@ -548,6 +548,11 @@
             if (playPromise !== undefined) {
                 playPromise.catch(err => {
                     console.log("GitHub Autoplay Blocked - Awaiting user click...", err);
+                    const retry = () => {
+                        if (bgmAudio && bgmAudio.paused) bgmAudio.play().catch(() => {});
+                        document.removeEventListener('click', retry);
+                    };
+                    document.addEventListener('click', retry);
                 });
             }
         } else if (bgmAudio.paused) {
