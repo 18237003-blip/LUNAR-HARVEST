@@ -972,6 +972,13 @@
 
         resize(); 
         renderLoop();
+
+        // 메인 화면에서부터 음악 재생 - 첫 클릭 시 시작 (브라우저 자동재생 정책 대응)
+        const startMusicOnFirstClick = () => {
+            playBackgroundMusic();
+            document.removeEventListener('click', startMusicOnFirstClick);
+        };
+        document.addEventListener('click', startMusicOnFirstClick);
     };
 </script>
 </body>
