@@ -353,6 +353,7 @@
                     <div class="btn-sub">READY TO DEPLOY</div>
                 </div>
             </div>
+            <div id="music-hint" style="margin-top: 18px; font-family: 'Noto Sans KR', sans-serif; font-size: 1rem; font-weight: 700; color: #A3FF00; letter-spacing: 3px; text-shadow: 0 0 12px #A3FF00, 0 0 24px #A3FF00; animation: pulse 2s infinite;">[ 화면을 클릭하면 음악이 재생됩니다 ]</div>
         </div>
     </div>
 
@@ -976,6 +977,8 @@
         // 메인 화면에서부터 음악 재생 - 첫 클릭 시 시작 (브라우저 자동재생 정책 대응)
         const startMusicOnFirstClick = () => {
             playBackgroundMusic();
+            const hint = document.getElementById('music-hint');
+            if (hint) hint.style.display = 'none';
             document.removeEventListener('click', startMusicOnFirstClick);
         };
         document.addEventListener('click', startMusicOnFirstClick);
