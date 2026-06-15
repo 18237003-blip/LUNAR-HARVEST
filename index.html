@@ -324,7 +324,7 @@
     <!-- ECLIPSE 로고와 SYS 정보를 나란히 좌측에 가깝게 묶어서 배치 -->
     <div style="display: flex; align-items: center; gap: 40px;">
         <div style="font-size: 0.7rem; opacity: 0.5; font-family: 'JetBrains Mono', monospace;">SYS-0XFF12</div>
-        <div class="logo" id="header-logo">ECLIPSE</div>
+        <div class="logo" id="header-logo" onclick="returnToMain()" style="cursor: pointer;" title="메인으로">ECLIPSE</div>
     </div>
     <div class="stats-grid">
         <div class="stat-item">
@@ -402,7 +402,7 @@
 
     const imgDir = getNormalizedPath(ASSET_PATHS.images);
     const videoDir = getNormalizedPath(ASSET_PATHS.videos);
-    const musicDir = getNormalizedPath(ASSET_PATHS.music);
+    const musicDir = getNormalizedPath(ASSET_PATHS.sound);
     const soundDir = getNormalizedPath(ASSET_PATHS.sound_sfx);
     const narrationDir = getNormalizedPath(ASSET_PATHS.narration);
 
@@ -503,6 +503,40 @@
             { text: "1. [탈출] 진정한 해방의 끝으로 (Fin)", reset: true }
         ]}
     };
+
+    function returnToMain() {
+        // 오디오 전체 정지
+        if (bgmAudio) { bgmAudio.pause(); bgmAudio.currentTime = 0; bgmAudio = null; }
+        if (narrationAudio) { narrationAudio.pause(); narrationAudio.currentTime = 0; narrationAudio = null; }
+        if (sfxAudio) { sfxAudio.pause(); sfxAudio.currentTime = 0; sfxAudio = null; }
+
+        // 상태 초기화
+        state = { S: 50, D: 0, A: 0 };
+        currentSceneKey = 'SC-01';
+        isTyping = false;
+        skipRequested = false;
+        stopScreenShake();
+
+        // UI 복구
+        document.getElementById('s-val').textContent = '50';
+        document.getElementById('d-val').textContent = '0';
+        document.getElementById('a-val').textContent = '0';
+
+        const bgImg = document.getElementById('bg-image');
+        if (bgImg) { bgImg.src = imgDir + 'COVER.png'; bgImg.style.opacity = '0.45'; }
+
+        const overlay = document.getElementById('color-overlay');
+        if (overlay) overlay.style.background = '';
+
+        const flash = document.getElementById('flash');
+        if (flash) { flash.style.transition = 'none'; flash.style.opacity = '0'; }
+
+        const gameUi = document.getElementById('game-ui');
+        gameUi.style.opacity = '0';
+        gameUi.style.display = 'none';
+
+        document.getElementById('lobby-ui').style.display = 'flex';
+    }
 
     function playBackgroundMusic() {
         if (!bgmAudio) {
